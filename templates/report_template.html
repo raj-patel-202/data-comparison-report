@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Comparison Report</title>
+    <meta name="description" content="Automated comparison report for two Excel data sources.">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+
+<body>
+    <!-- Mesh Gradient Background Elements -->
+    <div class="mesh-bg">
+        <div class="mesh-blob blob-1"></div>
+        <div class="mesh-blob blob-2"></div>
+        <div class="mesh-blob blob-3"></div>
+    </div>
+
+    <div class="app-wrapper">
+
+        <!-- Header & Summary Cards in Glass -->
+        <header class="dashboard-header glass-panel">
+            <div class="header-title"
+                style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 1rem;">
+                <h1>DATA COMPARISON REPORT</h1>
+                <span style="font-size: 0.875rem; color: var(--color-text-secondary); font-weight: 500;">
+                    <div>Generated on {{ generation_date }}</div>
+                    <div>Execution Time: {{ execution_time }} seconds</div>
+                </span>
+            </div>
+
+            <div class="report-overview"
+                style="margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid rgba(0,0,0,0.05); text-align: left;">
+                <h2 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 8px; color: var(--color-text);">
+                    Comparison Summary</h2>
+                <p
+                    style="font-size: 0.9375rem; color: var(--color-text-secondary); margin-bottom: 16px; line-height: 1.5;">
+                    This report reconciles the source and destination datasets based on a common ID, automatically
+                    flagging matched, mismatched, and missing values to ensure data integrity.<br>
+                    <strong>Comparison Basis:</strong> Joined on <code>{{ id_col_name }}</code>
+                </p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 1.5rem;">
+
+                    <!-- Source Card -->
+                    <div class="glass-card" style="padding: 1.25rem; border-radius: 12px; background: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.6);">
+                        <h3 style="font-size: 1rem; color: var(--color-primary); margin-bottom: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                            Source Dataset
+                        </h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.875rem;">
+                            <div style="display: flex; flex-direction: column;">
+                                <span style="color: var(--color-text-secondary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">DSN</span>
+                                <strong style="color: var(--color-text);">{{ dsn1 }}</strong>
+                            </div>
+                            <div style="display: flex; flex-direction: column;">
+                                <span style="color: var(--color-text-secondary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Table</span>
+                                <strong style="color: var(--color-text);">{{ tb1 }}</strong>
+                            </div>
+                            {% if file1 %}
+                            <div style="display: flex; flex-direction: column;">
+                                <span style="color: var(--color-text-secondary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">File</span>
+                                <strong style="color: var(--color-text); word-break: break-all;">{{ file1 }}</strong>
+                            </div>
+                            {% endif %}
+                            <div style="display: flex; flex-direction: column;">
+                                <span style="color: var(--color-text-secondary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Shape</span>
+                                <strong style="color: var(--color-text);">{{ cols1_len }} Cols &times; {{ count1 }} Rows</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Destination Card -->
+                    <div class="glass-card" style="padding: 1.25rem; border-radius: 12px; background: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.6);">
+                        <h3 style="font-size: 1rem; color: var(--color-primary); margin-bottom: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            Destination Dataset
+                        </h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.875rem;">
+                            <div style="display: flex; flex-direction: column;">
+                                <span style="color: var(--color-text-secondary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">DSN</span>
+                                <strong style="color: var(--color-text);">{{ dsn2 }}</strong>
+                            </div>
+                            <div style="display: flex; flex-direction: column;">
+                                <span style="color: var(--color-text-secondary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Table</span>
+                                <strong style="color: var(--color-text);">{{ tb2 }}</strong>
+                            </div>
+                            {% if file2 %}
+                            <div style="display: flex; flex-direction: column;">
+                                <span style="color: var(--color-text-secondary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">File</span>
+                                <strong style="color: var(--color-text); word-break: break-all;">{{ file2 }}</strong>
+                            </div>
+                            {% endif %}
+                            <div style="display: flex; flex-direction: column;">
+                                <span style="color: var(--color-text-secondary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Shape</span>
+                                <strong style="color: var(--color-text);">{{ cols2_len }} Cols &times; {{ count2 }} Rows</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="summary-cards">
+                <div class="summary-card glass-card summary-card--total"
+                    onclick="document.querySelector('[data-target=\'sub-all\']').click()">
+                    <div class="card-content">
+                        <div class="card-count">{{ total_intersection }}</div>
+                        <div class="card-label">Total Records Compared</div>
+                    </div>
+                </div>
+                <div class="summary-card glass-card summary-card--matched"
+                    onclick="document.querySelector('[data-target=\'sub-matched\']').click()">
+                    <div class="card-content">
+                        <div class="card-count">{{ matched_data | length }}</div>
+                        <div class="card-label">Matched</div>
+                    </div>
+                </div>
+                <div class="summary-card glass-card summary-card--mismatched"
+                    onclick="document.querySelector('[data-target=\'sub-mismatched\']').click()">
+                    <div class="card-content">
+                        <div class="card-count">{{ total_mismatches }}</div>
+                        <div class="card-label">Mismatched</div>
+                    </div>
+                </div>
+                <div class="summary-card glass-card summary-card--missing"
+                    onclick="document.querySelector('[data-target=\'sub-missing\']').click()">
+                    <div class="card-content">
+                        <div class="card-count">{{ missing_value_rows | length }}</div>
+                        <div class="card-label">Missing Values</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Primary Tabs -->
+        <div class="segmented-control glass-panel" id="primaryTabs">
+            <button class="primary-tab active" data-target="panel-data">Data</button>
+            <button class="primary-tab" data-target="panel-charts">Analytics</button>
+        </div>
+
+        <!-- ============ DATA PANEL ============ -->
+        <div class="tab-panel active" id="panel-data">
+
+            <div class="main-content-panel glass-panel">
+                <!-- Sub Tabs -->
+                <div class="sub-segmented-control" id="subTabs" style="overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; scrollbar-width: thin;">
+                    <button class="sub-tab active" data-target="sub-all">
+                        All <span class="badge badge--neutral">{{ comparison_data | length }}</span>
+                    </button>
+                    <button class="sub-tab" data-target="sub-all-comparable">
+                        Comparable <span class="badge badge--accent">{{ total_intersection }}</span>
+                    </button>
+                    <button class="sub-tab" data-target="sub-matched">
+                        Matched <span class="badge badge--success">{{ matched_data | length }}</span>
+                    </button>
+                    <button class="sub-tab" data-target="sub-mismatched">
+                        Mismatched <span class="badge badge--danger">{{ total_mismatches }}</span>
+                    </button>
+                    <button class="sub-tab" data-target="sub-missing">
+                        Missing <span class="badge badge--warning">{{ total_rows_with_nan }}</span>
+                    </button>
+                    <button class="sub-tab" data-target="sub-non-comparable-src">
+                        {{ dsn1 | title }} Only <span class="badge badge--src">{{ src_only_count }}</span>
+                    </button>
+                    <button class="sub-tab" data-target="sub-non-comparable-dstn">
+                        {{ dsn2 | title }} Only <span class="badge badge--dstn">{{ dstn_only_count }}</span>
+                    </button>
+                    <button class="sub-tab" data-target="sub-non-comparable-columns">
+                        Unique Columns <span class="badge badge--neutral">{{ src_only_columns | length + dstn_only_columns | length }}</span>
+                    </button>
+                </div>
+
+                <!-- Toolbar: Export, Zoom, Legend -->
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <div class="export-dropdown" style="position: relative;">
+                        <button class="glass-btn" id="export-toggle" style="padding: 6px 14px; font-size: 0.8125rem; font-weight: 600; cursor: pointer; border-radius: 8px; display: flex; align-items: center; gap: 6px;">
+                            Export (.xlsx) ▾
+                        </button>
+                        <div id="export-menu" style="display: none; position: absolute; top: calc(100% + 6px); left: 0; z-index: 10; background: rgba(255,255,255,0.95); backdrop-filter: blur(16px); border: 1px solid rgba(0,0,0,0.08); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); min-width: 180px; padding: 6px; animation: fade-in 0.15s ease;">
+                            <button class="glass-btn" id="export-current" style="display: block; width: 100%; text-align: left; padding: 8px 12px; font-size: 0.8125rem; font-weight: 500; cursor: pointer; border-radius: 6px; border: none;">Export Current Tab</button>
+                            <button class="glass-btn" id="export-all" style="display: block; width: 100%; text-align: left; padding: 8px 12px; font-size: 0.8125rem; font-weight: 500; cursor: pointer; border-radius: 6px; border: none;">Export All Tabs</button>
+                        </div>
+                    </div>
+
+                    <div style="width: 1px; height: 24px; background: rgba(0,0,0,0.08);"></div>
+
+                    <div class="table-controls" style="gap: 4px;">
+                        <button class="glass-btn zoom-btn" id="zoom-out" title="Zoom Out">−</button>
+                        <button class="glass-btn zoom-btn" id="zoom-in" title="Zoom In">+</button>
+                    </div>
+
+                    <div style="width: 1px; height: 24px; background: rgba(0,0,0,0.08);"></div>
+
+                    <div class="file-legend">
+                        <span class="legend-item"><span class="legend-color legend-color--file1"></span> {{ dsn1 }}</span>
+                        <span class="legend-item"><span class="legend-color legend-color--file2"></span> {{ dsn2 }}</span>
+                    </div>
+                </div>
+
+                <!-- Sub Panel: All Records (Everything) -->
+                <div class="sub-panel active" id="sub-all">
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="row-status"></th>
+                                    <th>{{ id_col_name }}</th>
+                                    {% for col in data_columns %}
+                                    <th class="col-header-hover" data-matched="{{ column_stats[col]['matched'] }}" data-mismatched="{{ column_stats[col]['mismatched'] }}" data-missing="{{ column_stats[col]['missing'] }}">{{ col }}</th>
+                                    {% endfor %}
+                                    {% for col in src_only_columns %}
+                                    <th class="col-group-header--file1 col-group-file1">{{ col }}</th>
+                                    {% endfor %}
+                                    {% for col in dstn_only_columns %}
+                                    <th class="col-group-header--file2 col-group-file2">{{ col }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-all">
+                                <!-- Populated by main.js -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination-controls">
+                        <button class="glass-btn page-btn page-prev" data-target="sub-all">Previous</button>
+                        <span class="page-info" id="page-info-all">Page 1 of 1</span>
+                        <button class="glass-btn page-btn page-next" data-target="sub-all">Next</button>
+                    </div>
+                </div>
+
+                <!-- Sub Panel: Comparable Records -->
+                <div class="sub-panel" id="sub-all-comparable">
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="row-status"></th>
+                                    <th>{{ id_col_name }}</th>
+                                    {% for col in data_columns %}
+                                    <th class="col-header-hover" data-matched="{{ column_stats[col]['matched'] }}" data-mismatched="{{ column_stats[col]['mismatched'] }}" data-missing="{{ column_stats[col]['missing'] }}">{{ col }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-all-comparable">
+                                <!-- Populated by main.js -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination-controls">
+                        <button class="glass-btn page-btn page-prev" data-target="sub-all-comparable">Previous</button>
+                        <span class="page-info" id="page-info-all-comparable">Page 1 of 1</span>
+                        <button class="glass-btn page-btn page-next" data-target="sub-all-comparable">Next</button>
+                    </div>
+                </div>
+
+                <!-- Sub Panel: Matched Records -->
+                <div class="sub-panel" id="sub-matched">
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="row-status"></th>
+                                    <th>{{ id_col_name }}</th>
+                                    {% for col in data_columns %}
+                                    <th class="col-header-hover" data-matched="{{ column_stats[col]['matched'] }}" data-mismatched="{{ column_stats[col]['mismatched'] }}" data-missing="{{ column_stats[col]['missing'] }}">{{ col }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-matched">
+                                <!-- Populated by main.js -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination-controls">
+                        <button class="glass-btn page-btn page-prev" data-target="sub-matched">Previous</button>
+                        <span class="page-info" id="page-info-matched">Page 1 of 1</span>
+                        <button class="glass-btn page-btn page-next" data-target="sub-matched">Next</button>
+                    </div>
+                </div>
+
+                <!-- Sub Panel: Mismatched Only -->
+                <div class="sub-panel" id="sub-mismatched">
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="row-status"></th>
+                                    <th>{{ id_col_name }}</th>
+                                    {% for col in data_columns %}
+                                    <th class="col-header-hover" data-matched="{{ column_stats[col]['matched'] }}" data-mismatched="{{ column_stats[col]['mismatched'] }}" data-missing="{{ column_stats[col]['missing'] }}">{{ col }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-mismatched">
+                                <!-- Populated by main.js -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination-controls">
+                        <button class="glass-btn page-btn page-prev" data-target="sub-mismatched">Previous</button>
+                        <span class="page-info" id="page-info-mismatched">Page 1 of 1</span>
+                        <button class="glass-btn page-btn page-next" data-target="sub-mismatched">Next</button>
+                    </div>
+                </div>
+
+                <!-- Sub Panel: Missing Values -->
+                <div class="sub-panel" id="sub-missing">
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="row-status"></th>
+                                    <th>{{ id_col_name }}</th>
+                                    {% for col in data_columns %}
+                                    <th class="col-header-hover" data-matched="{{ column_stats[col]['matched'] }}" data-mismatched="{{ column_stats[col]['mismatched'] }}" data-missing="{{ column_stats[col]['missing'] }}">{{ col }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-missing">
+                                <!-- Populated by main.js -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination-controls">
+                        <button class="glass-btn page-btn page-prev" data-target="sub-missing">Previous</button>
+                        <span class="page-info" id="page-info-missing">Page 1 of 1</span>
+                        <button class="glass-btn page-btn page-next" data-target="sub-missing">Next</button>
+                    </div>
+                </div>
+
+                <!-- Sub Panel: Non-Comparable Records (Source / File 1) -->
+                <div class="sub-panel" id="sub-non-comparable-src">
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="row-status"></th>
+                                    <th>{{ id_col_name }}</th>
+                                    {% for col in data_columns %}
+                                    <th class="col-header-hover" data-matched="{{ column_stats[col]['matched'] }}" data-mismatched="{{ column_stats[col]['mismatched'] }}" data-missing="{{ column_stats[col]['missing'] }}">{{ col }}</th>
+                                    {% endfor %}
+                                    {% for col in src_only_columns %}
+                                    <th class="col-group-header--file1 col-group-file1">{{ col }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-non-comparable-src">
+                                <!-- Populated by main.js -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination-controls">
+                        <button class="glass-btn page-btn page-prev"
+                            data-target="sub-non-comparable-src">Previous</button>
+                        <span class="page-info" id="page-info-non-comparable-src">Page 1 of 1</span>
+                        <button class="glass-btn page-btn page-next"
+                            data-target="sub-non-comparable-src">Next</button>
+                    </div>
+                </div>
+
+                <!-- Sub Panel: Non-Comparable Records (Destination / File 2) -->
+                <div class="sub-panel" id="sub-non-comparable-dstn">
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="row-status"></th>
+                                    <th>{{ id_col_name }}</th>
+                                    {% for col in data_columns %}
+                                    <th class="col-header-hover" data-matched="{{ column_stats[col]['matched'] }}" data-mismatched="{{ column_stats[col]['mismatched'] }}" data-missing="{{ column_stats[col]['missing'] }}">{{ col }}</th>
+                                    {% endfor %}
+                                    {% for col in dstn_only_columns %}
+                                    <th class="col-group-header--file2 col-group-file2">{{ col }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-non-comparable-dstn">
+                                <!-- Populated by main.js -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination-controls">
+                        <button class="glass-btn page-btn page-prev"
+                            data-target="sub-non-comparable-dstn">Previous</button>
+                        <span class="page-info" id="page-info-non-comparable-dstn">Page 1 of 1</span>
+                        <button class="glass-btn page-btn page-next"
+                            data-target="sub-non-comparable-dstn">Next</button>
+                    </div>
+                </div>
+
+                <!-- Sub Panel: Non-Comparable Columns (Side-by-side) -->
+                {% set ncol_src = src_only_columns | length %}
+                {% set ncol_dstn = dstn_only_columns | length %}
+                <div class="sub-panel" id="sub-non-comparable-columns">
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="col-group-header col-group-header--file1 col-group-file1"
+                                        colspan="{{ ncol_src + 1 }}">{{ dsn1 }}</th>
+                                    <th class="table-divider-cell" rowspan="2"></th>
+                                    <th class="col-group-header col-group-header--file2 col-group-file2"
+                                        colspan="{{ ncol_dstn + 1 }}">{{ dsn2 }}</th>
+                                </tr>
+                                <tr>
+                                    <th class="col-group-file1">{{ id_col_name }}</th>
+                                    {% for col in src_only_columns %}
+                                    <th class="col-group-file1">{{ col }}</th>
+                                    {% endfor %}
+                                    <th class="col-group-file2">{{ id_col_name }}</th>
+                                    {% for col in dstn_only_columns %}
+                                    <th class="col-group-file2">{{ col }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-non-comparable-columns">
+                                <!-- Populated by main.js -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination-controls">
+                        <button class="glass-btn page-btn page-prev"
+                            data-target="sub-non-comparable-columns">Previous</button>
+                        <span class="page-info" id="page-info-non-comparable-columns">Page 1 of 1</span>
+                        <button class="glass-btn page-btn page-next"
+                            data-target="sub-non-comparable-columns">Next</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ============ CHARTS PANEL ============ -->
+        <div class="tab-panel" id="panel-charts">
+            <div class="charts-grid">
+
+                <!-- Chart 0.1: Comparable vs Non Comparable (Source) -->
+                <div class="glass-panel chart-card">
+                    <h3>Comparable vs Non Comparable ({{ dsn1 }})</h3>
+                    <div style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem;">
+                        <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
+                            <h4 style="font-size: 0.85rem; color: #5f6b7a; font-weight: 500; margin-bottom: 8px;">Rows
+                            </h4>
+                            <div class="chart-container chart-container--pie" style="width: 100%;">
+                                <canvas id="chartSourceComparable"></canvas>
+                            </div>
+                        </div>
+                        <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
+                            <h4 style="font-size: 0.85rem; color: #5f6b7a; font-weight: 500; margin-bottom: 8px;">
+                                Columns</h4>
+                            <div class="chart-container chart-container--pie" style="width: 100%;">
+                                <canvas id="chartSourceComparableCols"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart 0.2: Comparable vs Non Comparable (Destination) -->
+                <div class="glass-panel chart-card">
+                    <h3>Comparable vs Non Comparable ({{ dsn2 }})</h3>
+                    <div style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem;">
+                        <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
+                            <h4 style="font-size: 0.85rem; color: #5f6b7a; font-weight: 500; margin-bottom: 8px;">Rows
+                            </h4>
+                            <div class="chart-container chart-container--pie" style="width: 100%;">
+                                <canvas id="chartDestComparable"></canvas>
+                            </div>
+                        </div>
+                        <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
+                            <h4 style="font-size: 0.85rem; color: #5f6b7a; font-weight: 500; margin-bottom: 8px;">
+                                Columns</h4>
+                            <div class="chart-container chart-container--pie" style="width: 100%;">
+                                <canvas id="chartDestComparableCols"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart 1: Match vs Mismatch -->
+                <div class="glass-panel chart-card">
+                    <h3>Match vs Mismatch</h3>
+                    <div class="chart-container chart-container--pie">
+                        <canvas id="chartMatchMismatch"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 2: Data Quality Overview -->
+                <div class="glass-panel chart-card">
+                    <h3>Data Quality Overview</h3>
+                    <div class="chart-container chart-container--pie">
+                        <canvas id="chartDataQuality"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 3: Mismatches by Column -->
+                <div class="glass-panel chart-card {% if total_columns > 5 %}chart-card--wide{% endif %}">
+                    <h3>Mismatches by Column</h3>
+                    <div class="chart-container chart-container--bar">
+                        <canvas id="chartColumnMismatch"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 4: Data Completeness -->
+                <div class="glass-panel chart-card {% if total_columns > 5 %}chart-card--wide{% endif %}">
+                    <h3>Missing Value Count per Column</h3>
+                    <div class="chart-container chart-container--bar">
+                        <canvas id="chartCompleteness"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const reportData = JSON.parse('{{ report_json | safe }}');
+    </script>
+    <script src="main.js"></script>
+</body>
+
+</html>
