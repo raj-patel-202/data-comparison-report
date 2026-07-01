@@ -20,8 +20,6 @@ def generate_excel_workbook(req: ExportRequest) -> io.BytesIO:
     wb = Workbook()
     wb.remove(wb.active)
     
-    fill_mismatch = PatternFill(start_color="FFB3B0", end_color="FFB3B0", fill_type="solid")
-    fill_missing = PatternFill(start_color="FFF0D9", end_color="FFF0D9", fill_type="solid")
     fill_src_only = PatternFill(start_color="E2F0FF", end_color="E2F0FF", fill_type="solid")
     fill_dstn_only = PatternFill(start_color="F5E8FE", end_color="F5E8FE", fill_type="solid")
     
