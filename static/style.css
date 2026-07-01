@@ -518,3 +518,24 @@ th.table-divider-cell {
     .summary-cards { grid-template-columns: 1fr; }
     .table-controls { width: 100%; justify-content: flex-end; margin-top: 12px; }
 }
+
+/* Summary Table Wrap */
+.summary-table-wrap::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+}
+.summary-table-wrap {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.scroll-fade {
+    position: absolute;
+    bottom: 1px; left: 1px; right: 1px;
+    height: 24px;
+    background: linear-gradient(to bottom, transparent, rgba(255,255,255,1));
+    pointer-events: none;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}

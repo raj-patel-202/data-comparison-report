@@ -594,61 +594,65 @@ function getActiveTabId() {
     return activeSubTab ? activeSubTab.dataset.target : 'sub-all';
 }
 
-function exportTableToSheet(tabId) {
-    const oldRowsPerPage = ROWS_PER_PAGE;
-    ROWS_PER_PAGE = 9999999;
-    renderTablePage(tabId);
-    
-    const tableEl = document.querySelector(`#${tabId} table`);
-    if (!tableEl) return XLSX.utils.aoa_to_sheet([["No data available"]]);
-    
-    const clone = tableEl.cloneNode(true);
-    
-    clone.querySelectorAll('.diff-cell').forEach(cell => {
-        const diff1 = cell.querySelector('.diff-line--file1');
-        const diff2 = cell.querySelector('.diff-line--file2');
-        if (diff1 && diff2) {
-            cell.innerText = `${diff1.innerText} | ${diff2.innerText}`;
-        }
-    });
+// Export logic mapped to Python backend
+async function downloadExcelFromBackend(payload, filename) {
+    try {
+        const response = await fetch('/export_excel', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
 
-    clone.querySelectorAll('.empty-state').forEach(empty => {
-        empty.innerText = 'No records found.';
-    });
-    
-    const ws = XLSX.utils.table_to_sheet(clone);
-    
-    ROWS_PER_PAGE = oldRowsPerPage;
-    renderTablePage(tabId);
-    
-    return ws;
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.statusText}`);
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    } catch (err) {
+        alert("Failed to export Excel: " + err.message);
+    }
 }
 
 const exportCurrentBtn = document.getElementById('export-current');
 if (exportCurrentBtn) {
     exportCurrentBtn.addEventListener('click', () => {
-        if (typeof XLSX === 'undefined') {
-            alert("Excel export library is still loading or failed to load.");
-            return;
-        }
         const tabId = getActiveTabId();
-        const ws = exportTableToSheet(tabId);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Current Tab");
-        XLSX.writeFile(wb, `Comparison_${tabId}.xlsx`);
+        const activeSubTab = document.querySelector('.sub-tab.active');
+        const tabName = activeSubTab ? activeSubTab.textContent.trim().split(/\s+/)[0] : 'Current Tab';
+
+        const payload = {
+            id_col_name: reportData.id_col_name || 'Event Id',
+            columns: reportData.dataColumns || [],
+            src_only_columns: reportData.srcOnlyColumns || [],
+            dstn_only_columns: reportData.dstnOnlyColumns || [],
+            tabs: [
+                {
+                    tab_id: tabId,
+                    name: tabName,
+                    rows: getDataForTab(tabId)
+                }
+            ]
+        };
+
+        downloadExcelFromBackend(payload, `Comparison_${tabId}.xlsx`);
     });
 }
 
 const exportAllBtn = document.getElementById('export-all');
 if (exportAllBtn) {
     exportAllBtn.addEventListener('click', () => {
-        if (typeof XLSX === 'undefined') {
-            alert("Excel export library is still loading or failed to load.");
-            return;
-        }
-        const wb = XLSX.utils.book_new();
-        
-        const tabs = [
+        const tabsInfo = [
             { id: 'sub-all', name: 'All' },
             { id: 'sub-all-comparable', name: 'Comparable' },
             { id: 'sub-matched', name: 'Matched' },
@@ -658,12 +662,19 @@ if (exportAllBtn) {
             { id: 'sub-non-comparable-dstn', name: 'Target Only' },
             { id: 'sub-non-comparable-columns', name: 'Unique Columns' }
         ];
-        
-        tabs.forEach(tab => {
-            const ws = exportTableToSheet(tab.id);
-            XLSX.utils.book_append_sheet(wb, ws, tab.name);
-        });
-        
-        XLSX.writeFile(wb, `Comparison_Full_Report.xlsx`);
+
+        const payload = {
+            id_col_name: reportData.id_col_name || 'Event Id',
+            columns: reportData.dataColumns || [],
+            src_only_columns: reportData.srcOnlyColumns || [],
+            dstn_only_columns: reportData.dstnOnlyColumns || [],
+            tabs: tabsInfo.map(t => ({
+                tab_id: t.id,
+                name: t.name,
+                rows: getDataForTab(t.id)
+            }))
+        };
+
+        downloadExcelFromBackend(payload, `Comparison_Full_Report.xlsx`);
     });
 }

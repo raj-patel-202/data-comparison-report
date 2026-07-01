@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Data Comparison Report</title>
     <meta name="description" content="Automated comparison report for two Excel data sources.">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=2">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -45,7 +45,7 @@
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 1.5rem;">
 
                     <!-- Source Card -->
-                    <div class="glass-card" style="padding: 1.25rem; border-radius: 12px; background: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.6);">
+                    <div class="glass-card" style="padding: 1.25rem; border-radius: 12px; background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 8px 24px rgba(0,0,0,0.06);">
                         <h3 style="font-size: 1rem; color: var(--color-primary); margin-bottom: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                             Source Dataset
@@ -70,10 +70,42 @@
                                 <strong style="color: var(--color-text);">{{ cols1_len }} Cols &times; {{ count1 }} Rows</strong>
                             </div>
                         </div>
+                        
+                        <div style="position: relative; margin-top: 20px;">
+                            <div class="table-wrap summary-table-wrap" style="margin-top: 0; max-height: 250px; overflow-y: auto; box-shadow: none; border: 1px solid rgba(0,0,0,0.05); border-radius: 8px;">
+                                <table>
+                                <thead>
+                                    <tr>
+                                        <th style="text-align: left;">Column</th>
+                                        <th>Matched</th>
+                                        <th>Mismatched</th>
+                                        <th>Missing</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for col in data_columns %}
+                                    <tr>
+                                        <td style="text-align: left; font-weight: 500;">{{ col }}</td>
+                                        <td>{{ column_stats[col]['matched'] }}</td>
+                                        <td>{{ column_stats[col]['mismatched'] }}</td>
+                                        <td>{{ column_stats[col]['missing'] }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                    {% for col in src_only_columns %}
+                                    <tr>
+                                        <td style="text-align: left; font-weight: 500;">{{ col }}</td>
+                                        <td colspan="3" style="color: var(--color-src); font-weight: 600;">Unique</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            </div>
+                            <div class="scroll-fade"></div>
+                        </div>
                     </div>
 
                     <!-- Destination Card -->
-                    <div class="glass-card" style="padding: 1.25rem; border-radius: 12px; background: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.6);">
+                    <div class="glass-card" style="padding: 1.25rem; border-radius: 12px; background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 8px 24px rgba(0,0,0,0.06);">
                         <h3 style="font-size: 1rem; color: var(--color-primary); margin-bottom: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                             Destination Dataset
@@ -97,6 +129,38 @@
                                 <span style="color: var(--color-text-secondary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Shape</span>
                                 <strong style="color: var(--color-text);">{{ cols2_len }} Cols &times; {{ count2 }} Rows</strong>
                             </div>
+                        </div>
+                        
+                        <div style="position: relative; margin-top: 20px;">
+                            <div class="table-wrap summary-table-wrap" style="margin-top: 0; max-height: 250px; overflow-y: auto; box-shadow: none; border: 1px solid rgba(0,0,0,0.05); border-radius: 8px;">
+                                <table>
+                                <thead>
+                                    <tr>
+                                        <th style="text-align: left;">Column</th>
+                                        <th>Matched</th>
+                                        <th>Mismatched</th>
+                                        <th>Missing</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for col in data_columns %}
+                                    <tr>
+                                        <td style="text-align: left; font-weight: 500;">{{ col }}</td>
+                                        <td>{{ column_stats[col]['matched'] }}</td>
+                                        <td>{{ column_stats[col]['mismatched'] }}</td>
+                                        <td>{{ column_stats[col]['missing'] }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                    {% for col in dstn_only_columns %}
+                                    <tr>
+                                        <td style="text-align: left; font-weight: 500;">{{ col }}</td>
+                                        <td colspan="3" style="color: var(--color-dstn); font-weight: 600;">Unique</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            </div>
+                            <div class="scroll-fade"></div>
                         </div>
                     </div>
 

@@ -7,7 +7,7 @@ An automated comparison report generator that leverages **DuckDB** to identify m
 - **Pure DuckDB Execution**: Bypasses Pandas entirely, performing lightning-fast data matching and merging directly within DuckDB SQL.
 - **FastAPI Backend**: Serves a dynamic setup page to configure your comparison keys and processes the report seamlessly in the browser.
 - **Premium UI Dashboard**: A beautiful HTML/CSS dashboard featuring a glassmorphism theme, dynamic pagination, zoom controls, hover tooltips for column statistics, and color-coded statuses.
-- **Excel Export**: Export any individual data slice or the entire multi-tabbed report directly to `.xlsx` from the browser using SheetJS.
+- **Excel Export**: Export any individual data slice or the entire multi-tabbed report directly to `.xlsx`. The export logic is powered by a robust backend using `openpyxl`, ensuring accurate cell formatting and column matching.
 
 The project is structured across the following main files:
 1. `database.py`: Handles dynamic table name and file discovery using `pyodbc`.
