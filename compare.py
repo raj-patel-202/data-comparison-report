@@ -26,6 +26,10 @@ def get_common_columns(dsn1, dsn2):
     cols1_clean = [clean_column_name(c) for c in cols1]
     cols2_clean = [clean_column_name(c) for c in cols2]
     
+    con.execute("DROP VIEW IF EXISTS t1_raw")
+    con.execute("DROP VIEW IF EXISTS t2_raw")
+    
+    con.close()
     return [c for c in cols1_clean if c in cols2_clean]
 
 def run_duckdb_comparison(dsn1, dsn2, id_cols: list):
@@ -37,9 +41,9 @@ def run_duckdb_comparison(dsn1, dsn2, id_cols: list):
     con = duckdb.connect()
     con.execute("INSTALL odbc; LOAD odbc;")
 
-    print('Registering views...')
-    con.execute(f"CREATE VIEW t1_raw AS SELECT * FROM odbc_query('DSN={dsn1};', 'SELECT * FROM [{tb1}]')")
-    con.execute(f"CREATE VIEW t2_raw AS SELECT * FROM odbc_query('DSN={dsn2};', 'SELECT * FROM [{tb2}]')")
+    print('Registering tables...')
+    con.execute(f"CREATE TABLE t1_raw AS SELECT * FROM odbc_query('DSN={dsn1};', 'SELECT * FROM [{tb1}]')")
+    con.execute(f"CREATE TABLE t2_raw AS SELECT * FROM odbc_query('DSN={dsn2};', 'SELECT * FROM [{tb2}]')")
 
     cols1_raw = con.execute("DESCRIBE t1_raw").fetchall()
     cols2_raw = con.execute("DESCRIBE t2_raw").fetchall()
@@ -52,8 +56,8 @@ def run_duckdb_comparison(dsn1, dsn2, id_cols: list):
     sel1 = ", ".join([f'"{c}" AS "{clean_column_name(c)}"' for c in cols1])
     sel2 = ", ".join([f'"{c}" AS "{clean_column_name(c)}"' for c in cols2])
 
-    con.execute(f"CREATE VIEW t1 AS SELECT {sel1} FROM t1_raw")
-    con.execute(f"CREATE VIEW t2 AS SELECT {sel2} FROM t2_raw")
+    con.execute(f"CREATE TABLE t1 AS SELECT {sel1} FROM t1_raw")
+    con.execute(f"CREATE TABLE t2 AS SELECT {sel2} FROM t2_raw")
 
     cols1_clean = [clean_column_name(c) for c in cols1]
     cols2_clean = [clean_column_name(c) for c in cols2]
@@ -61,6 +65,7 @@ def run_duckdb_comparison(dsn1, dsn2, id_cols: list):
     # Validate id_cols
     for id_col in id_cols:
         if id_col not in cols1_clean or id_col not in cols2_clean:
+            con.close()
             raise ValueError(f"Column '{id_col}' is not present in both files.")
 
     data_columns = [c for c in cols1_clean if c in cols2_clean and c not in id_cols]
@@ -212,6 +217,7 @@ def run_duckdb_comparison(dsn1, dsn2, id_cols: list):
         missing_count = sum(1 for r in records if (r[f"{col}_1"] == '' or r[f"{col}_2"] == '') and r['is_comparable'])
         completeness_combined.append(missing_count)
 
+    con.close()
     return {
         'id_col_name': " - ".join(id_cols),
         'total_intersection': sum(1 for r in records if r['is_comparable']),

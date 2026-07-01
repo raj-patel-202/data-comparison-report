@@ -28,5 +28,6 @@ def get_table_name(dsn_name):
     if not sheet_name:
         sheet_name = tables[0].table_name
         
+    cursor.close()
     conn.close()
     return sheet_name.strip("'").strip("`"), file_name
